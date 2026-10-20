@@ -11,8 +11,18 @@ jobs:
         with:
           distribution: temurin
           java-version: 17
-      - uses: android-actions/setup-android@v3
-      - run: ./gradlew --no-daemon assembleDebug
+      - name: Accept Android SDK licences (no sdkmanager needed)
+        run: |
+          SDK="${ANDROID_HOME:-$ANDROID_SDK_ROOT}"
+          sudo mkdir -p "$SDK/licenses"
+          printf '\n24333f8a63b6825ea9c5514f83c2829b004d1fee\nd56f5187479451eabf01fb78af6dfcb131a6481e\n8933bad161af4178b1185d1a37fbf41ea5269c55\n' | sudo tee "$SDK/licenses/android-sdk-license" > /dev/null
+          printf '\n84831b9409646a918e30573bab4c9c91346d8abd\n' | sudo tee "$SDK/licenses/android-sdk-preview-license" > /dev/null
+          sudo chmod -R a+rwX "$SDK"
+          echo "sdk.dir=$SDK" > local.properties
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: 8.9
+      - run: gradle --no-daemon assembleDebug
       - uses: actions/upload-artifact@v4
         with:
           name: InkFlow-debug-apk

@@ -18,12 +18,22 @@ jobs:
           printf '\n24333f8a63b6825ea9c5514f83c2829b004d1fee\nd56f5187479451eabf01fb78af6dfcb131a6481e\n8933bad161af4178b1185d1a37fbf41ea5269c55\n' | sudo tee "$SDK/licenses/android-sdk-license" > /dev/null
           printf '\n84831b9409646a918e30573bab4c9c91346d8abd\n' | sudo tee "$SDK/licenses/android-sdk-preview-license" > /dev/null
           sudo chmod -R a+rwX "$SDK"
-          echo "sdk.dir=$SDK" > local.properties
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: 8.9
-      - run: gradle --no-daemon assembleDebug
+      - name: Build debug APK (finds the project folder automatically)
+        run: |
+          F=$(find . -name settings.gradle.kts -not -path './.git/*' | head -1)
+          if [ -z "$F" ]; then
+            echo "settings.gradle.kts NOT FOUND. Repository contents:"
+            find . -not -path './.git/*' | head -60
+            exit 1
+          fi
+          DIR=$(dirname "$F")
+          echo "Building in $DIR"
+          cd "$DIR"
+          gradle --no-daemon assembleDebug
       - uses: actions/upload-artifact@v4
         with:
           name: InkFlow-debug-apk
-          path: app/build/outputs/apk/debug/*.apk
+          path: "**/build/outputs/apk/debug/*.apk"
